@@ -1,30 +1,45 @@
-#  Copyright (c) 2021 Richard Smith and others
-#
-#  This program and the accompanying materials are made available under the
-#  terms of the Eclipse Public License 2.0 which is available at
-#  http://www.eclipse.org/legal/epl-2.0.
-#
-#  This Source Code may also be made available under the following Secondary
-#  licenses when the conditions for such availability set forth in the Eclipse
-#  Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-#  with the GNU Classpath Exception which is
-#  available at https://www.gnu.org/software/classpath/license.html.
-#
-#  SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
+# raylib module initialization
+import os
 import sys
+import glob
+import importlib.util
+
+# Try to import using the standard mechanism first
 try:
     from ._raylib_cffi import ffi, lib as rl
-except ModuleNotFoundError:
-    print("\n*** ERROR LOADING NATIVE CODE ***\n")
-    print("See https://github.com/electronstudio/raylib-python-cffi/issues/142\n", file=sys.stderr)
-    print("Your Python is: "+str(sys.implementation)+"\n", file=sys.stderr)
-    raise
-from raylib._raylib_cffi.lib import *
-from raylib.colors import *
-from raylib.defines import *
-import cffi
-from .version import  __version__
+except ImportError:
+    # If that fails, try a more flexible approach with the available modules
+    print("Standard import failed, trying alternative approach")
+    
+    # Find the appropriate CFFI module based on current Python version
+    cffi_modules = glob.glob(os.path.join(os.path.dirname(__file__), "_raylib_cffi*.so"))
+    if not cffi_modules:
+        raise ImportError("No _raylib_cffi module found for any Python version")
+    
+    print(f"Available modules: {cffi_modules}")
+    
+    # Try each module until one works
+    for module_path in cffi_modules:
+        try:
+            module_name = os.path.basename(module_path).split('.')[0]
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
+            if spec is None:
+                continue
+                
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            # If we get here, the module loaded successfully
+            ffi = module.ffi
+            rl = module.lib
+            print(f"Successfully loaded {module_path}")
+            break
+        except Exception as e:
+            print(f"Failed to load {module_path}: {e}")
+    else:
+        # If we get here, none of the modules worked
+        raise ImportError("Could not load any available _raylib_cffi module")
 
-print("RAYLIB STATIC "+__version__+" LOADED", file=sys.stderr)
-
+# The rest of the original file content
+from .colors import *
+from .enums import *

@@ -14,12 +14,7 @@ payload_dir = os.path.join(current_dir, "payload")
 sys.path.insert(0, payload_dir)
 
 # Import pyray from our bundled module
-try:
-    from pyray import *
-    print("Using bundled pyray module")
-except ImportError:
-    print("Error: Could not import bundled pyray module")
-    sys.exit(1)
+from pyray import *
 
 # Initialize window
 screen_width = 2160  # Default C3X resolution width
