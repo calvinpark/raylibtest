@@ -10,10 +10,50 @@ import time
 import ctypes
 from ctypes import *
 
+# Define common structures needed regardless of import method
+class Rectangle(Structure):
+    _fields_ = [
+        ("x", c_float),
+        ("y", c_float),
+        ("width", c_float),
+        ("height", c_float),
+    ]
+
+class Vector2(Structure):
+    _fields_ = [
+        ("x", c_float),
+        ("y", c_float),
+    ]
+
+class Color(Structure):
+    _fields_ = [
+        ("r", c_ubyte),
+        ("g", c_ubyte),
+        ("b", c_ubyte),
+        ("a", c_ubyte),
+    ]
+
 # Try to use pyray if available, otherwise use ctypes to load raylib directly
 try:
     import pyray as rl
     print("Using pyray")
+    
+    # Create color constants to match our ctypes implementation
+    YELLOW = rl.Color(255, 255, 0, 255)
+    RED = rl.Color(255, 0, 0, 255)
+    GREEN = rl.Color(0, 255, 0, 255)
+    BLUE = rl.Color(0, 0, 255, 255)
+    BLACK = rl.Color(0, 0, 0, 255)
+    WHITE = rl.Color(255, 255, 255, 255)
+    
+    # Add these to rl namespace for consistent access
+    rl.YELLOW = YELLOW
+    rl.RED = RED
+    rl.GREEN = GREEN
+    rl.BLUE = BLUE
+    rl.BLACK = BLACK
+    rl.WHITE = WHITE
+    
 except ImportError:
     print("Pyray not found, using ctypes to load raylib directly")
     
@@ -27,29 +67,6 @@ except ImportError:
     
     # Load the library
     raylib = CDLL(path)
-    
-    # Define necessary raylib types and functions
-    class Color(Structure):
-        _fields_ = [
-            ("r", c_ubyte),
-            ("g", c_ubyte),
-            ("b", c_ubyte),
-            ("a", c_ubyte),
-        ]
-    
-    class Rectangle(Structure):
-        _fields_ = [
-            ("x", c_float),
-            ("y", c_float),
-            ("width", c_float),
-            ("height", c_float),
-        ]
-    
-    class Vector2(Structure):
-        _fields_ = [
-            ("x", c_float),
-            ("y", c_float),
-        ]
     
     # Define raylib function prototypes
     raylib.InitWindow.argtypes = [c_int, c_int, c_char_p]
@@ -79,6 +96,14 @@ except ImportError:
     # Define raylib constants
     MOUSE_LEFT_BUTTON = 0
     FLAG_FULLSCREEN_MODE = 2
+    
+    # Define colors
+    YELLOW = Color(255, 255, 0, 255)
+    RED = Color(255, 0, 0, 255)
+    GREEN = Color(0, 255, 0, 255)
+    BLUE = Color(0, 0, 255, 255)
+    BLACK = Color(0, 0, 0, 255)
+    WHITE = Color(255, 255, 255, 255)
     
     # Create wrapper functions to match pyray interface
     def init_window(width, height, title):
@@ -135,14 +160,6 @@ except ImportError:
     
     def get_monitor_height(monitor):
         return raylib.GetMonitorHeight(monitor)
-    
-    # Define colors
-    YELLOW = Color(255, 255, 0, 255)
-    RED = Color(255, 0, 0, 255)
-    GREEN = Color(0, 255, 0, 255)
-    BLUE = Color(0, 0, 255, 255)
-    BLACK = Color(0, 0, 0, 255)
-    WHITE = Color(255, 255, 255, 255)
     
     # Replace rl namespace with our wrapper functions
     class rl:
